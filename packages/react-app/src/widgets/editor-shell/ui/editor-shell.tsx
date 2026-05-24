@@ -10,6 +10,7 @@ import {useLogView} from '~features/log-view';
 import {ConfigFileManager} from '~shared/config/config-manager';
 import {ArcSideNav} from '~shared/controls/arc-side-nav';
 import {GlobalToaster} from '~shared/controls/global-toaster';
+import {PanelIconBar} from '~shared/controls/panel-icon-bar';
 import {
   SideNavProvider,
   useSideNavContext,
@@ -20,6 +21,7 @@ import {useKeyboardShortcuts} from '~shared/lib/side-nav';
 import {Theme, useTheme} from '~shared/providers/theme-provider';
 import {AppTabEntity, useProjectLayoutStore} from '~shared/store';
 import {TabGroupType} from '~shared/store/project-layout.types';
+import {usePanelCollapseStore} from '~shared/store/use-panel-collapse-store';
 import ArcStartPage from '~widgets/start-page/ui/arc-start-page';
 
 const EditorShellContent: React.FC = () => {
@@ -52,6 +54,7 @@ const EditorShellContent: React.FC = () => {
             AudioReach™ Creator
           </div>
         </div>
+        <PanelIconBar />
       </div>
 
       <div
@@ -75,6 +78,7 @@ export const EditorShell: React.FC = () => {
   const {isLogViewOpen, toggleLogView} = useLogView();
   const {isKeyConfiguratorViewOpen, toggleKeyConfiguratorView} =
     useKeyConfiguratorView();
+  const {setActiveProject} = usePanelCollapseStore();
 
   // Set up IPC listener for log view toggle from menu
   useEffect(() => {
@@ -156,9 +160,13 @@ export const EditorShell: React.FC = () => {
 
     const activeTabGroup = store.activeTabGroup;
 
+    if (!activeTabGroup) {
+      return;
+    }
+
     // Check if we're currently viewing a project tab (not Start page)
     const isViewingProject =
-      activeTabGroup?.groupType === TabGroupType.ProjectGroup;
+      activeTabGroup.groupType === TabGroupType.ProjectGroup;
 
     // Update project context in menu
     if (isViewingProject) {
@@ -210,7 +218,36 @@ export const EditorShell: React.FC = () => {
           });
         });
     }
-  }, [store.activeTabGroup, isLogViewOpen, isKeyConfiguratorViewOpen]);
+  }, [
+    store.activeTabGroup,
+    isLogViewOpen,
+    isKeyConfiguratorViewOpen,
+  ]);
+
+  // Separate effect to update layout store with active project
+  useEffect(() => {
+    const activeTabGroup = store.activeTabGroup;
+
+    if (!activeTabGroup) {
+      return;
+    }
+
+    const isViewingProject =
+      activeTabGroup.groupType === TabGroupType.ProjectGroup;
+
+    if (isViewingProject) {
+      const projectGroup = store.projectGroups.find(
+        (p) => p.id === activeTabGroup.id,
+      );
+      if (projectGroup) {
+        setActiveProject(projectGroup.mainTab.id);
+      }
+    }
+  }, [
+    store.activeTabGroup,
+    setActiveProject,
+    store.projectGroups,
+  ]);
 
   // Initialize with a default app group and Start tab
   useEffect(() => {

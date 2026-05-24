@@ -15,6 +15,16 @@
   }
 }
 
+/* Hide top drop zone arrow — panels should only be dropped left, right, or bottom */
+.flexlayout__edge_rect_top {
+  display: none !important;
+}
+
+/* Hide bottom edge drop zone arrow — prevents dropping at the very bottom of the layout (Log View area) */
+.flexlayout__edge_rect_bottom {
+  display: none !important;
+}
+
 :root {
   font-family: 'Roboto Flex', system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-weight: 400;

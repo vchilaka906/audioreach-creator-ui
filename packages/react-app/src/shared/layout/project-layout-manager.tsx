@@ -36,6 +36,8 @@ import {
 import {getColorName} from '../utils/color-utils';
 import {deepEqual} from '../utils/deep-equality';
 
+import {createPanelCollapseLogic} from './panel-collapse-manager';
+
 import 'flexlayout-react/style/combined.css';
 
 interface ProjectLayoutManagerProps {
@@ -897,23 +899,22 @@ export class PanelIntegration {
               return;
             }
 
-            const currentLayout = state.projectTabLayouts.get(mainTab.id);
-            const prevLayout = prevState?.projectTabLayouts.get(mainTab.id);
-            const currentRegistry = state.componentRegistry;
-            const prevRegistry = prevState?.componentRegistry;
+            // Rebuild model if registry or layout content changed
+            const currentLayoutStr = state.getLayoutConfig(mainTab.id);
+            const prevLayoutStr = prevState?.getLayoutConfig(mainTab.id) ?? null;
+            const registryChanged = state.componentRegistry !== prevState?.componentRegistry;
 
-            if (
-              currentLayout !== prevLayout ||
-              currentRegistry !== prevRegistry
-            ) {
-              if (this.globalManager) {
-                const newModel = this.globalManager.createFlexLayoutModel(
-                  mainTab.id,
-                );
-                setModel(newModel);
-              }
+            if ((registryChanged || currentLayoutStr !== prevLayoutStr) && this.globalManager) {
+              const newModel = this.globalManager.createFlexLayoutModel(mainTab.id);
+              setModel(newModel);
             }
           },
+        );
+
+        // Subscribe to layout store changes for panel toggling
+        const unsubscribeLayout = createPanelCollapseLogic(
+          model,
+          setModel,
         );
 
         return () => {
@@ -921,8 +922,11 @@ export class PanelIntegration {
           if (unsubscribe) {
             unsubscribe();
           }
+          if (unsubscribeLayout) {
+            unsubscribeLayout();
+          }
         };
-      }, []);
+      }, [model]);
 
       return createElement(
         'div',

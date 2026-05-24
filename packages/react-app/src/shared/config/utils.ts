@@ -3,20 +3,13 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-import type {
-  IBorderLocation,
-  IJsonBorderNode,
-  IJsonModel,
-  IJsonTabNode,
-  IJsonTabSetNode,
-} from 'flexlayout-react';
+import type {IJsonModel, IJsonTabNode} from 'flexlayout-react';
 
 export type JSONDataMap = {
   [key: string]: any;
 };
 
 export const GRAPH_DESIGNER_COMPONENT_NAME = 'usecase';
-
 /**
  * Constant representing an invalid/undefined project ID
  */
@@ -47,55 +40,74 @@ export const graphDesignerLayout = {
  * @returns Complete IJsonModel ready to use with FlexLayout
  */
 export function GetFlexLayoutConfig(): IJsonModel {
-  const tabNode: IJsonTabNode = {
-    component: GRAPH_DESIGNER_COMPONENT_NAME,
-    id: 'usecase-main',
-    name: 'Graph Designer',
-    type: 'tab',
-  };
-
-  const tabSet: IJsonTabSetNode = {
-    children: [tabNode],
-    enableTabStrip: false,
-    type: 'tabset',
-  };
-
-  const borderLeft: IJsonBorderNode = {
-    children: [
-      {
-        component: 'module-list',
-        id: 'module-list-panel',
-        name: 'Module List',
-        type: 'tab',
-      } as IJsonTabNode,
-      {
-        component: 'subgraph-list',
-        id: 'subgraph-list-panel',
-        name: 'Subgraph List',
-        type: 'tab',
-      } as IJsonTabNode,
-    ],
-    location: 'left' as IBorderLocation,
-    type: 'border',
-  };
-
-  const borderBottom: IJsonBorderNode = {
-    children: [] as IJsonTabNode[],
-    location: 'bottom' as IBorderLocation,
-    type: 'border',
-  };
-
-  const borderRight: IJsonBorderNode = {
-    children: [] as IJsonTabNode[],
-    location: 'right' as IBorderLocation,
-    type: 'border',
-  };
-
   const flexLayoutConfig: IJsonModel = {
-    borders: [borderLeft, borderBottom, borderRight],
-    global: {},
+    borders: [],
+    global: {enableEdgeDock: true},
     layout: {
-      children: [tabSet],
+      children: [
+        {
+          children: [
+            {
+              component: 'module-list',
+              enableClose: false,
+              id: 'module-list-panel',
+              name: 'Module List',
+              type: 'tab',
+            } as IJsonTabNode,
+          ],
+          type: 'tabset',
+          weight: 20,
+        },
+        {
+          children: [
+            {
+              children: [
+                {
+                  component: GRAPH_DESIGNER_COMPONENT_NAME,
+                  id: 'usecase-main',
+                  name: 'Graph Designer',
+                  type: 'tab',
+                } as IJsonTabNode,
+              ],
+              enableDivide: false,
+              enableDrop: false,
+              enableTabStrip: false,
+              id: 'center-panel',
+              type: 'tabset',
+              weight: 80,
+            },
+            {
+              children: [
+                {
+                  component: 'log-view',
+                  enableClose: false,
+                  enableDrag: false,
+                  id: 'log-view-panel',
+                  name: 'Log View',
+                  type: 'tab',
+                } as IJsonTabNode,
+              ],
+              type: 'tabset',
+              weight: 20,
+            },
+          ],
+          type: 'column',
+          weight: 60,
+        },
+        {
+          children: [
+            {
+              component: 'subgraph-list',
+              enableClose: false,
+              id: 'subgraph-list-panel',
+              name: 'Subgraph List',
+              type: 'tab',
+            } as IJsonTabNode,
+          ],
+          type: 'tabset',
+          weight: 20,
+        },
+      ],
       id: 'root',
       type: 'row',
     },
