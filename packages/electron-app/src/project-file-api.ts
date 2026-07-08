@@ -5,14 +5,17 @@
 
 import type {
   ArcWorkspaceFileProperties,
+  GetSaveAsProjectFilePathResponseData,
   OpenProjectFileResponseData,
+  ProjectFile,
+  SaveProjectFileResponseData,
   SaveValidationResultsRequest,
   SaveValidationResultsResponseData,
 } from '@audioreach-creator-ui/api-utils/';
 import {dialog, shell} from 'electron';
 import {readFileSync, statSync, writeFileSync} from 'fs';
-import {readdir} from 'fs/promises';
-import {dirname, join} from 'path';
+import {readdir, writeFile} from 'fs/promises';
+import {basename, dirname, join} from 'path';
 
 export function getFileModificationDateSync(path: string): Date | undefined {
   try {
@@ -170,5 +173,74 @@ export async function saveValidationResults(
   }
 
   return {data, response};
+}
+/**
+ * Write project files to disk.
+ * Used for both Save and Save As — the caller provides the confirmed paths.
+ */
+export async function saveProjectFile(
+  projectFiles: ProjectFile[],
+): Promise<{data: SaveProjectFileResponseData; response: string}> {
+  try {
+    const workspaceFile = projectFiles.find((f) => f.filePath);
+    if (!workspaceFile?.filePath) {
+      return {
+        data: {error: 'No workspace file path provided'},
+        response: 'Missing workspace path',
+      };
+    }
+    for (const file of projectFiles) {
+      const resolvedPath =
+        file.filePath ??
+        join(dirname(workspaceFile.filePath), basename(file.fileName));
+      await writeFile(resolvedPath, Buffer.from(file.fileContent));
+    }
+    return {
+      data: {},
+      response: 'Project saved successfully',
+    };
+  } catch (error) {
+    console.error('File write error:', error);
+    return {
+      data: {error: (error as Error).message},
+      response: 'Failed to save file',
+    };
+  }
+}
+
+/** Show OS save dialog and return the chosen path — does NOT write any file */
+export async function getSaveAsProjectFilePath(
+  win: Electron.BaseWindow,
+  defaultPath?: string,
+): Promise<{data: GetSaveAsProjectFilePathResponseData; response: string}> {
+  try {
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath,
+      filters: [
+        {extensions: ['awsp'], name: 'AudioReach Workspace'},
+        {extensions: ['*'], name: 'All Files'},
+      ],
+      title: 'Save Project As',
+    });
+
+    if (result.canceled || !result.filePath) {
+      return {data: {cancelled: true}, response: 'Save dialog cancelled'};
+    }
+
+    const filePath = result.filePath.toLowerCase().endsWith('.awsp')
+      ? result.filePath
+      : `${result.filePath}.awsp`;
+
+    return {
+      data: {cancelled: false, filePath},
+      response: `Path selected: ${filePath}`,
+    };
+  } catch (error) {
+    console.error('Save dialog error:', error);
+    return {
+      data: {error: (error as Error).message},
+      response: 'Failed to show save dialog',
+    };
+  }
 }
 // #endregion
