@@ -460,8 +460,8 @@ describe('useProjectSaver', () => {
       expect(projectsApi.downloadProjectFiles).toHaveBeenCalledTimes(3);
     });
 
-    // Error toast shows file paths (human-readable) not UUIDs
-    it('shows failed file paths (not UUIDs) in error toast', async () => {
+    // Error toast shows the count of failed projects
+    it('shows failed project count in error toast', async () => {
       makeDownloadFail('error');
       makeStoreWithProjects([
         {filePath: '/path/project.awsp', projectId: 'uuid-1234'},
@@ -476,7 +476,8 @@ describe('useProjectSaver', () => {
         ([msg]: [string]) => msg.includes('Failed to save'),
       );
       expect(toastCall).toBeDefined();
-      expect(toastCall[0]).toContain('/path/project.awsp');
+      expect(toastCall[0]).toContain('1 project');
+      expect(toastCall[0]).not.toContain('/path/project.awsp');
       expect(toastCall[0]).not.toContain('uuid-1234');
     });
 

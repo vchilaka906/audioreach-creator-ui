@@ -236,7 +236,11 @@ export function useProjectSaver() {
       }
 
       if (failed.length > 0) {
-        showToast(`Failed to save: ${failed.join(', ')}`, 'danger');
+        const count = failed.length;
+        showToast(
+          `Failed to save ${count} project${count > 1 ? 's' : ''}`,
+          'danger',
+        );
         logger.error('Save All partially failed', {
           action: 'save_all_projects',
           component: 'useProjectSaver',

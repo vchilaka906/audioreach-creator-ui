@@ -326,10 +326,10 @@ export const EditorShell: React.FC = () => {
       {isSaving &&
         createPortal(
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center"
+            className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm"
             style={{
-              backdropFilter: 'blur(2px)',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              backgroundColor:
+                'color-mix(in oklab, var(--color-surface-overlay) 50%, transparent)',
             }}
           >
             <div
