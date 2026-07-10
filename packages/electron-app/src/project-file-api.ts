@@ -15,7 +15,7 @@ import type {
 import {dialog, shell} from 'electron';
 import {readFileSync, statSync, writeFileSync} from 'fs';
 import {readdir, writeFile} from 'fs/promises';
-import {basename, dirname, join, sep} from 'path';
+import {basename, dirname, join} from 'path';
 
 export function getFileModificationDateSync(path: string): Date | undefined {
   try {
@@ -196,19 +196,16 @@ export async function saveProjectFile(
         // Primary file path comes from the OS save dialog — trusted.
         resolvedPath = file.filePath;
       } else {
-        // fileName is untrusted — allow only a plain name, no path segments.
+        // fileName is untrusted — strip path segments, then confirm the
+        // resolved path stays inside baseDir.
         const safeName = basename(file.fileName);
-        if (
-          safeName !== file.fileName ||
-          safeName === '..' ||
-          safeName === '.'
-        ) {
+        resolvedPath = join(baseDir, safeName);
+        if (resolvedPath.indexOf(baseDir) !== 0) {
           return {
             data: {error: `Invalid file name: ${file.fileName}`},
             response: 'Rejected unsafe file path',
           };
         }
-        resolvedPath = `${baseDir}${sep}${safeName}`;
       }
       await writeFile(resolvedPath, Buffer.from(file.fileContent));
     }
