@@ -70,8 +70,11 @@ export async function openProjectFile(
             );
           }
 
-          const acdbFilePath = join(dirPath, acdbFiles[0]);
-          acdbFileData = readFileSync(acdbFilePath);
+          const acdbName = basename(acdbFiles[0]);
+          const acdbFilePath = join(dirPath, acdbName);
+          if (acdbFilePath.indexOf(dirPath) === 0) {
+            acdbFileData = readFileSync(acdbFilePath);
+          }
         }
       } catch (error) {
         console.error('Error reading .acdb file:', error);
