@@ -22,6 +22,30 @@
 
 ---
 
+## Default Values
+All preferences fall back to these values when nothing has been saved yet for the active project (`shared/config/user-preferences-types.ts`):
+
+| Preference (dot-notation path) | Default | Control |
+| --- | --- | --- |
+| `visualization.highlightPPModules` | `false` | Highlight PP Modules checkbox |
+| `visualization.showControlLinks` | `true` | Show Control Links checkbox |
+| `visualization.showDanglingLinks` | `true` | Show Dangling Links checkbox |
+| `usecases.workflowType` | `'usecase-workflow'` | Workflow radio (Usecase Workflow / System Workflow) |
+| `usecases.workflowLevel` | `'usecase-level'` | Nested Subsystem level / Usecase level radio |
+| `display.portVisibilityMode` | `'active'` | Port Visibility Mode switch (on) |
+| `visualization.viewMode` | `'compact'` | Compact View / Detailed View radio |
+| `visualization.showSubgraphIds` | `false` | Show Subgraph IDs checkbox |
+| `visualization.showContainerIds` | `false` | Show Container IDs checkbox |
+| `visualization.showModuleInstanceIds` | `false` | Show Module Instance IDs checkbox |
+| `visualization.expandSubgraphs` | `false` | Expand Subgraphs checkbox |
+| `visualization.simplifySubsystems` | `false` | Simplified Subsystems checkbox |
+| `visualization.showMdfModules` | `false` | Show MDF Modules checkbox |
+| `usecases.namePreference` | `'alias'` | Usecase Name radio (Alias / Key Value(s) / Value(s)) |
+
+Referenced from Error Handling below: if preferences have not loaded yet on first render, every control falls back to the value in this table.
+
+---
+
 ## Requirements
 | Title | User Story | Importance | Type |
 | --- | --- | --- | --- |
@@ -31,31 +55,15 @@
 | Show Dangling Links checkbox | As a user, I want to check or uncheck Show Dangling Links from the Popover | Must Have | Functional |
 | Highlight PP Modules checkbox | As a user, I want to check or uncheck Highlight PP Modules from the Popover | Must Have | Functional |
 | Expand Subgraphs checkbox | As a user, I want to check or uncheck Expand Subgraphs from the Popover | Must Have | Functional |
-| Simplified Subsystems checkbox | As a user, I want to check or uncheck Simplified Subsystems from the Popover, disabled while Usecase Workflow is selected; automatically checked when System Workflow is selected | Must Have | Functional |
+| Simplified Subsystems checkbox | As a user, I want to check or uncheck Simplified Subsystems from the Popover. It is disabled only for the default combination — Usecase Workflow + Usecase level. It is enabled for Usecase Workflow + Subsystem level, and for System Workflow at either level. Enabling or disabling it never changes its checked value — it always shows whatever the user last checked or unchecked it to. | Must Have | Functional |
 | Show MDF Modules checkbox | As a user, I want to check or uncheck Show MDF Modules from the Popover | Must Have | Functional |
 | Port Visibility Mode toggle | As a user, I want to toggle port visibility between active and all from the Popover | Must Have | Functional |
 | Compact View / Detailed View radio | As a user, I want to switch between Compact View and Detailed View from the Popover. **Compact View:** Nodes show names only — module/container/subgraph IDs are hidden for a smaller, denser, easier-to-read graph. **Detailed View:** Nodes show their full IDs (module instance, container, subgraph) alongside names, giving a complete view of each module. | Must Have | Functional |
 | Workflow radio | As a user, I want to switch between Usecase Workflow and System Workflow from the Popover | Must Have | Functional |
 | Usecase Name Preference radio | As a user, I want to switch between Alias, Key Value(s), and Value(s) name display from the Popover | Must Have | Functional |
-| Preference persistence | As a user, I want my display choices to persist after I change them | Must Have | Functional |
+| Preference persistence | As a user, I want my display choices to persist after I change them. Each change writes to the in-memory preferences store immediately, then a debounced (300ms) write flushes the full config to disk via `ConfigFileManager.save`; if the Popover closes before the debounce fires, the pending write flushes immediately on unmount instead of being dropped. | Must Have | Functional |
 | Close on outside click | As a user, I want the Popover to close when I click outside it | Must Have | Functional |
 | Graph Designer scope | As a user, I only want Display Options visible when I am in the Graph Designer tab | Must Have | Functional |
-
----
-
-## Flow Diagrams
-
-**Checkbox / Control Interaction:**
-![Checkbox Control Interaction](assets/checkbox-control-interaction.png)
-
-**Radio Select (Compact View / Detailed View, Workflow, Usecase Name)**
-![Radio Select](assets/radio-select.png)
-
-**Conditional Sub-Section Reveal (Workflow level, Detailed-View IDs)**
-![Conditional Sub-Section Reveal](assets/conditional-subsection-reveal.png)
-
-**Close Popover**
-![Close Popover](assets/close-popover.png)
 
 ---
 
@@ -67,11 +75,84 @@
 *   The Popover has four sections: Graph View, Workflow, Graph Display, and Usecase Name
 *   Checkboxes and the Port Visibility Mode Switch toggle show the current on/off state
 *   RadioGroup controls show the current selection
-*   Every change writes immediately to the user preferences store
-*   Clicking anywhere outside the Popover closes it
+*   Every change writes immediately to the user preferences store (see Preference persistence above for the exact save mechanism)
+*   Clicking anywhere outside the Popover closes it — any pending debounced write is flushed on close, so no change made just before closing is lost
 
-**Popover UI:**
-![Popover UI](assets/popover-ui.png)
+**Popover UI (default state — Usecase Workflow / Usecase level / Compact View):**
+```
+┌───────────────────────────────────────┐
+│ GRAPH VIEW                             │
+│ ☐ Highlight PP Modules                 │
+│ ☑ Show Control Links                   │
+│ ☑ Show Dangling Links                  │
+├───────────────────────────────────────┤
+│ WORKFLOW                               │
+│ ● Usecase Workflow                     │
+│     ○ Subsystem level                  │
+│     ● Usecase level                    │
+│ ○ System Workflow                      │
+├───────────────────────────────────────┤
+│ GRAPH DISPLAY                          │
+│ Port Visibility Mode           [●───]  │
+│ ● Compact View                         │
+│ ○ Detailed View                        │
+│ ☐ Expand Subgraphs                     │
+│ ☐ Simplified Subsystems (disabled)     │
+│ ☐ Show MDF Modules                     │
+├───────────────────────────────────────┤
+│ USECASE NAME                           │
+│ ● Alias (Show value(s) if NA)          │
+│ ○ Key Value(s)                         │
+│ ○ Value(s)                             │
+└───────────────────────────────────────┘
+```
+
+**Same popover after selecting Subsystem level (still Usecase Workflow) — Simplified Subsystems becomes enabled, showing whatever it was last checked to:**
+```
+┌───────────────────────────────────────┐
+│ WORKFLOW                               │
+│ ● Usecase Workflow                     │
+│     ● Subsystem level                  │
+│     ○ Usecase level                    │
+│ ○ System Workflow                      │
+├───────────────────────────────────────┤
+│ GRAPH DISPLAY                          │
+│ ...                                     │
+│ ☑ Simplified Subsystems (enabled)      │
+│ ...                                     │
+└───────────────────────────────────────┘
+```
+
+**Same popover after selecting System Workflow and Detailed View — Simplified Subsystems remains enabled with its last checked value (no forced state either way):**
+```
+┌───────────────────────────────────────┐
+│ GRAPH VIEW                             │
+│ ☐ Highlight PP Modules                 │
+│ ☑ Show Control Links                   │
+│ ☑ Show Dangling Links                  │
+├───────────────────────────────────────┤
+│ WORKFLOW                               │
+│ ○ Usecase Workflow                     │
+│ ● System Workflow                      │
+│   (Subsystem/Usecase level hidden)     │
+├───────────────────────────────────────┤
+│ GRAPH DISPLAY                          │
+│ Port Visibility Mode           [●───]  │
+│ ○ Compact View                         │
+│ ● Detailed View                        │
+│     ☐ Show Subgraph IDs                │
+│     ☐ Show Container IDs               │
+│     ☐ Show Module Instance IDs         │
+│ ☐ Expand Subgraphs                     │
+│ ☑ Simplified Subsystems (enabled)      │
+│ ☐ Show MDF Modules                     │
+├───────────────────────────────────────┤
+│ USECASE NAME                           │
+│ ● Alias (Show value(s) if NA)          │
+│ ○ Key Value(s)                         │
+│ ○ Value(s)                             │
+└───────────────────────────────────────┘
+```
 
 ---
 
@@ -93,7 +174,7 @@ A QUI Popover that opens to the right of the side nav when the user clicks Displ
 *   Compact View / Detailed View — RadioGroup with two options
 *   When Detailed View is selected: Show Subgraph IDs, Show Container IDs, Show Module Instance IDs — three additional Checkboxes, indented under the Detailed View option
 *   Expand Subgraphs — Checkbox, always visible
-*   Simplified Subsystems — Checkbox, disabled when Usecase Workflow is selected; automatically checked when System Workflow is selected; retains its checked/unchecked value when switching between Usecase Workflow and System Workflow
+*   Simplified Subsystems — Checkbox. `disabled` is derived from the combination of `Workflow type` and `Workflow level`: disabled only for `Usecase Workflow` + `Usecase level` (the default); enabled for `Usecase Workflow` + `Subsystem level`, and for `System Workflow` regardless of level. No transition ever writes to the checked value itself — the checkbox always shows whatever the user last checked/unchecked it to, including while disabled.
 *   Show MDF Modules — Checkbox
 
 **Usecase Name** — RadioGroup with three options:
@@ -111,8 +192,8 @@ Not applicable on frontend.
 ---
 
 ## Error Handling
-*   If a preference fails to save, a toast notification is shown to the user
-*   If preferences have not loaded yet on first render, all controls fall back to their default values
+*   If a preference fails to save — either the in-memory `updatePreference` write fails, or the debounced on-disk `ConfigFileManager.save` resolves `false` or rejects — a toast notification is shown to the user
+*   If preferences have not loaded yet on first render, all controls fall back to the values in the Default Values table above
 
 ---
 
@@ -126,6 +207,7 @@ Not applicable on frontend.
 *   The side nav item list is only rebuilt when the user's preferences change
 *   The QUI Popover content is not loaded until the user opens it for the first time — no cost while it is closed
 *   Each preference change causes one re-render of the Popover only — no unnecessary updates
+*   Disk writes are debounced (300ms) so rapid successive toggles collapse into a single `ConfigFileManager.save` call rather than one per click
 
 ---
 
@@ -137,18 +219,20 @@ Not applicable on frontend.
 *   Both `Usecase Workflow` and `System Workflow` radios are always present
 *   `Subsystem level` / `Usecase level` are visible when `Usecase Workflow` is selected, hidden when `System Workflow` is selected, and reappear when switching back
 *   Detailed-View-only checkboxes are hidden in Compact View and appear after switching to Detailed View
-*   Simplified Subsystems is disabled when Usecase Workflow is selected
-*   Simplified Subsystems is automatically checked when System Workflow is selected
-*   Simplified Subsystems retains its checked/unchecked value when switching between Usecase Workflow and System Workflow — only its `disabled` state changes
+*   Simplified Subsystems is disabled for the default Usecase Workflow + Usecase level combination
+*   Simplified Subsystems is enabled after selecting Subsystem level under Usecase Workflow
+*   Simplified Subsystems is enabled after selecting System Workflow
+*   Simplified Subsystems' checked value is never altered by any Workflow type/level transition — enabling, disabling, and re-enabling all preserve the last value the user set
 *   A toast notification is shown when a preference save fails
+*   A pending debounced save flushes immediately when the Popover unmounts (verifies no change is lost on close)
 
 **Integration Tests:**
 *   Click Display Options → QUI Popover opens
 *   Check/uncheck Show Control Links, Show MDF Modules → correct preference save triggered
 *   Toggle Port Visibility Mode → correct preference save triggered
 *   Select Detailed View → correct preference save triggered, ID checkboxes appear
-*   Select System Workflow → correct preference save triggered, Subsystem/Usecase level radios disappear, Simplified Subsystems automatically checked
-*   Select Subsystem level / Usecase level (while Usecase Workflow is active) → correct preference save triggered
+*   Select System Workflow → correct preference save triggered, Subsystem/Usecase level radios disappear, Simplified Subsystems becomes enabled (checked value unchanged)
+*   Select Subsystem level / Usecase level (while Usecase Workflow is active) → correct preference save triggered; Simplified Subsystems enables on Subsystem level, disables on Usecase level, checked value unchanged either way
 *   Select Alias / Key Value(s) / Value(s) → correct preference save triggered
 *   Simulate preference save failure → toast notification appears
 *   Click outside Popover → Popover closes
