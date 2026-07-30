@@ -20,6 +20,7 @@ import type {
 } from '~features/project-operations';
 import {useArcRecentProjects} from '~features/recent-projects';
 import {SubgraphList} from '~features/subgraph-list';
+import {ValidationResultPanel} from '~features/validation-result-view';
 import {ConfigFileManager} from '~shared/config/config-manager';
 import {
   GetFlexLayoutConfig,
@@ -177,6 +178,16 @@ export function useProjectOpener({
           return (
             <GraphDesignerStoreContext.Provider value={tabStore}>
               <KeyConfiguratorPanel />
+            </GraphDesignerStoreContext.Provider>
+          );
+        }
+        if (
+          component === 'validation-results' ||
+          name === 'Validation Results'
+        ) {
+          return (
+            <GraphDesignerStoreContext.Provider value={tabStore}>
+              <ValidationResultPanel />
             </GraphDesignerStoreContext.Provider>
           );
         }

@@ -86,6 +86,14 @@ export function GetFlexLayoutConfig(): IJsonModel {
     type: 'tab',
   };
 
+  const validationResultTab: IJsonTabNode = {
+    component: 'validation-results',
+    enableClose: false,
+    id: 'validation-results-panel',
+    name: 'Validation Results',
+    type: 'tab',
+  };
+
   // Tabset nodes
   const leftTabset: IJsonTabSetNode = {
     children: [moduleListTab],
@@ -104,7 +112,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
   };
 
   const bottomTabset: IJsonTabSetNode = {
-    children: [logViewTab],
+    children: [logViewTab, validationResultTab],
     type: 'tabset',
     weight: 20,
   };
