@@ -26,6 +26,7 @@ import {
   GetFlexLayoutConfig,
   GRAPH_DESIGNER_COMPONENT_NAME,
   MAIN_TAB_TITLE,
+  migrateFlexLayoutConfig,
 } from '~shared/config/utils';
 import {showToast} from '~shared/controls/global-toaster';
 import {logEventEmitter, logger, LogLevel} from '~shared/lib/logger';
@@ -98,9 +99,17 @@ export function useProjectOpener({
     );
     const isValidFlexLayout = (v: unknown): v is IJsonModel =>
       !!v && typeof v === 'object' && 'layout' in v;
+    // Adds new panels and removes retired ones.
     const flexLayoutConfig = isValidFlexLayout(savedLayout)
-      ? savedLayout
+      ? migrateFlexLayoutConfig(savedLayout)
       : GetFlexLayoutConfig();
+    if (flexLayoutConfig !== savedLayout) {
+      ConfigFileManager.instance.setProjectConfigData(
+        project.id,
+        'layout.flexLayout',
+        flexLayoutConfig,
+      );
+    }
 
     // mainTab.id is deterministically `project_${project.id}`, so both stores
     // can be created before registering the FlexLayout render callback — the

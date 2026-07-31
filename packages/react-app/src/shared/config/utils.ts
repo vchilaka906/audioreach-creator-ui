@@ -10,6 +10,8 @@ import type {
   IJsonTabSetNode,
 } from 'flexlayout-react';
 
+import {logger} from '../lib/logger';
+
 export type JSONDataMap = {
   [key: string]: any;
 };
@@ -46,9 +48,10 @@ export const graphDesignerLayout = {
  * @returns Complete IJsonModel ready to use with FlexLayout
  */
 export function GetFlexLayoutConfig(): IJsonModel {
-  // Tab nodes
+  // Tab nodes. isCorePanel: true marks tabs that migrateFlexLayoutConfig can remove.
   const moduleListTab: IJsonTabNode = {
     component: 'module-list',
+    config: {isCorePanel: true},
     enableClose: false,
     id: 'module-list-panel',
     name: 'Module List',
@@ -64,6 +67,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const logViewTab: IJsonTabNode = {
     component: 'log-view',
+    config: {isCorePanel: true},
     enableClose: false,
     id: 'log-view-panel',
     name: 'Log View',
@@ -72,6 +76,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const subgraphListTab: IJsonTabNode = {
     component: 'subgraph-list',
+    config: {isCorePanel: true},
     enableClose: false,
     id: 'subgraph-list-panel',
     name: 'Subgraph List',
@@ -80,6 +85,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const keyConfiguratorTab: IJsonTabNode = {
     component: 'key-configurator',
+    config: {isCorePanel: true},
     enableClose: false,
     id: 'key-configurator-panel',
     name: 'Key Configurator',
@@ -88,6 +94,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const validationResultTab: IJsonTabNode = {
     component: 'validation-results',
+    config: {isCorePanel: true},
     enableClose: false,
     id: 'validation-results-panel',
     name: 'Validation Results',
@@ -97,6 +104,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
   // Tabset nodes
   const leftTabset: IJsonTabSetNode = {
     children: [moduleListTab],
+    id: 'left-panel',
     type: 'tabset',
     weight: 20,
   };
@@ -113,12 +121,14 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const bottomTabset: IJsonTabSetNode = {
     children: [logViewTab, validationResultTab],
+    id: 'bottom-panel',
     type: 'tabset',
     weight: 20,
   };
 
   const rightTabset: IJsonTabSetNode = {
     children: [subgraphListTab, keyConfiguratorTab],
+    id: 'right-panel',
     type: 'tabset',
     weight: 20,
   };
@@ -139,6 +149,85 @@ export function GetFlexLayoutConfig(): IJsonModel {
   };
 
   return flexLayoutConfig;
+}
+
+// Finds a tabset by id, searching depth-first through row/tabset children.
+function findTabsetById(
+  node: IJsonRowNode | IJsonTabSetNode,
+  id: string,
+): IJsonTabSetNode | null {
+  if (node.type === 'tabset') {
+    return node.id === id ? (node as IJsonTabSetNode) : null;
+  }
+  for (const child of node.children) {
+    const found = findTabsetById(child as IJsonRowNode | IJsonTabSetNode, id);
+    if (found) {
+      return found;
+    }
+  }
+  return null;
+}
+
+// Every tabset in the default layout, flattened.
+function collectTabsets(
+  node: IJsonRowNode | IJsonTabSetNode,
+  into: IJsonTabSetNode[],
+): void {
+  if (node.type === 'tabset') {
+    into.push(node as IJsonTabSetNode);
+    return;
+  }
+  for (const child of node.children) {
+    collectTabsets(child as IJsonRowNode | IJsonTabSetNode, into);
+  }
+}
+
+// Adds default tabs missing from a saved layout, and removes stale core-panel tabs.
+export function migrateFlexLayoutConfig(savedLayout: IJsonModel): IJsonModel {
+  const defaultTabsets: IJsonTabSetNode[] = [];
+  collectTabsets(GetFlexLayoutConfig().layout, defaultTabsets);
+
+  let migrated: IJsonModel | null = null;
+
+  for (const defaultTabset of defaultTabsets) {
+    if (!defaultTabset.id) {
+      continue;
+    }
+    const savedTabset = findTabsetById(savedLayout.layout, defaultTabset.id);
+    if (!savedTabset) {
+      logger.warn(
+        `migrateFlexLayoutConfig: no matching tabset for id "${defaultTabset.id}" in saved layout`,
+      );
+      continue;
+    }
+
+    // Default tabs the saved tabset doesn't have yet.
+    const missingTabs = defaultTabset.children.filter(
+      (defaultTab) =>
+        !savedTabset.children.some((savedTab) => savedTab.id === defaultTab.id),
+    );
+    // Core-panel tabs the saved tabset has that are no longer in the default.
+    const staleTabs = savedTabset.children.filter(
+      (savedTab) =>
+        savedTab.config?.isCorePanel &&
+        !defaultTabset.children.some(
+          (defaultTab) => defaultTab.id === savedTab.id,
+        ),
+    );
+    if (missingTabs.length === 0 && staleTabs.length === 0) {
+      continue;
+    }
+
+    // Clone once, on first change, and add/remove tabs on the clone.
+    migrated ??= JSON.parse(JSON.stringify(savedLayout)) as IJsonModel;
+    const targetTabset = findTabsetById(migrated.layout, defaultTabset.id)!;
+    targetTabset.children.push(...missingTabs);
+    targetTabset.children = targetTabset.children.filter(
+      (tab) => !staleTabs.some((staleTab) => staleTab.id === tab.id),
+    );
+  }
+
+  return migrated ?? savedLayout;
 }
 
 /* returns either a primitive value (like true, 42, "bottom") or
