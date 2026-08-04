@@ -48,10 +48,9 @@ export const graphDesignerLayout = {
  * @returns Complete IJsonModel ready to use with FlexLayout
  */
 export function GetFlexLayoutConfig(): IJsonModel {
-  // Tab nodes. isCorePanel: true marks tabs that migrateFlexLayoutConfig can remove.
+  // Tab nodes
   const moduleListTab: IJsonTabNode = {
     component: 'module-list',
-    config: {isCorePanel: true},
     enableClose: false,
     id: 'module-list-panel',
     name: 'Module List',
@@ -67,7 +66,6 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const logViewTab: IJsonTabNode = {
     component: 'log-view',
-    config: {isCorePanel: true},
     enableClose: false,
     id: 'log-view-panel',
     name: 'Log View',
@@ -76,7 +74,6 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const subgraphListTab: IJsonTabNode = {
     component: 'subgraph-list',
-    config: {isCorePanel: true},
     enableClose: false,
     id: 'subgraph-list-panel',
     name: 'Subgraph List',
@@ -85,7 +82,6 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const keyConfiguratorTab: IJsonTabNode = {
     component: 'key-configurator',
-    config: {isCorePanel: true},
     enableClose: false,
     id: 'key-configurator-panel',
     name: 'Key Configurator',
@@ -94,7 +90,6 @@ export function GetFlexLayoutConfig(): IJsonModel {
 
   const validationResultTab: IJsonTabNode = {
     component: 'validation-results',
-    config: {isCorePanel: true},
     enableClose: false,
     id: 'validation-results-panel',
     name: 'Validation Results',
@@ -182,10 +177,39 @@ function collectTabsets(
   }
 }
 
-// Adds default tabs missing from a saved layout, and removes stale core-panel tabs.
+// Every tab id in the saved layout, across all tabsets.
+function collectTabIds(tabsets: IJsonTabSetNode[]): Set<string> {
+  const ids = new Set<string>();
+  for (const tabset of tabsets) {
+    for (const tab of tabset.children) {
+      if (tab.id) {
+        ids.add(tab.id);
+      }
+    }
+  }
+  return ids;
+}
+
+// Runtime-only tabs the app inserts itself, not part of GetFlexLayoutConfig().
+const DYNAMIC_LAYOUT_COMPONENTS = new Set(['panel-placeholder']);
+
+// Adds missing default tabs to a saved layout and drops any tab the app itself never creates.
 export function migrateFlexLayoutConfig(savedLayout: IJsonModel): IJsonModel {
   const defaultTabsets: IJsonTabSetNode[] = [];
   collectTabsets(GetFlexLayoutConfig().layout, defaultTabsets);
+  const knownComponents = new Set(DYNAMIC_LAYOUT_COMPONENTS);
+  for (const tabset of defaultTabsets) {
+    for (const tab of tabset.children) {
+      if (tab.component) {
+        knownComponents.add(tab.component);
+      }
+    }
+  }
+
+  const savedTabsets: IJsonTabSetNode[] = [];
+  collectTabsets(savedLayout.layout, savedTabsets);
+  // Skip a tab that already exists in the saved layout, even in a different tabset.
+  const savedTabIds = collectTabIds(savedTabsets);
 
   let migrated: IJsonModel | null = null;
 
@@ -201,18 +225,14 @@ export function migrateFlexLayoutConfig(savedLayout: IJsonModel): IJsonModel {
       continue;
     }
 
-    // Default tabs the saved tabset doesn't have yet.
+    // Default tabs missing from the saved layout entirely.
     const missingTabs = defaultTabset.children.filter(
-      (defaultTab) =>
-        !savedTabset.children.some((savedTab) => savedTab.id === defaultTab.id),
+      (defaultTab) => !savedTabIds.has(defaultTab.id ?? ''),
     );
-    // Core-panel tabs the saved tabset has that are no longer in the default.
+    // Tabs whose component the app could never have written itself.
     const staleTabs = savedTabset.children.filter(
       (savedTab) =>
-        savedTab.config?.isCorePanel &&
-        !defaultTabset.children.some(
-          (defaultTab) => defaultTab.id === savedTab.id,
-        ),
+        !savedTab.component || !knownComponents.has(savedTab.component),
     );
     if (missingTabs.length === 0 && staleTabs.length === 0) {
       continue;
