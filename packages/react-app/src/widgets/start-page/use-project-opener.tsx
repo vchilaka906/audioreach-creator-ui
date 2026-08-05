@@ -25,8 +25,13 @@ import {ConfigFileManager} from '~shared/config/config-manager';
 import {
   GetFlexLayoutConfig,
   GRAPH_DESIGNER_COMPONENT_NAME,
+  KEY_CONFIGURATOR_COMPONENT_NAME,
+  LOG_VIEW_COMPONENT_NAME,
   MAIN_TAB_TITLE,
   migrateFlexLayoutConfig,
+  MODULE_LIST_COMPONENT_NAME,
+  SUBGRAPH_LIST_COMPONENT_NAME,
+  VALIDATION_RESULTS_COMPONENT_NAME,
 } from '~shared/config/utils';
 import {showToast} from '~shared/controls/global-toaster';
 import {logEventEmitter, logger, LogLevel} from '~shared/lib/logger';
@@ -143,12 +148,7 @@ export function useProjectOpener({
       },
       (node: any) => {
         const component = node.getComponent();
-        const name =
-          typeof node.getName === 'function' ? node.getName() : undefined;
-        if (
-          component === GRAPH_DESIGNER_COMPONENT_NAME ||
-          name === 'Graph Designer'
-        ) {
+        if (component === GRAPH_DESIGNER_COMPONENT_NAME) {
           return (
             <ProjectStoreContext.Provider value={projectStore}>
               <GraphDesignerStoreContext.Provider value={tabStore}>
@@ -162,38 +162,35 @@ export function useProjectOpener({
             </ProjectStoreContext.Provider>
           );
         }
-        if (component === 'module-list' || name === 'Module List') {
+        if (component === MODULE_LIST_COMPONENT_NAME) {
           return (
             <GraphDesignerStoreContext.Provider value={tabStore}>
               <ModuleList />
             </GraphDesignerStoreContext.Provider>
           );
         }
-        if (component === 'subgraph-list' || name === 'Subgraph List') {
+        if (component === SUBGRAPH_LIST_COMPONENT_NAME) {
           return (
             <GraphDesignerStoreContext.Provider value={tabStore}>
               <SubgraphList />
             </GraphDesignerStoreContext.Provider>
           );
         }
-        if (component === 'log-view' || name === 'Log View') {
+        if (component === LOG_VIEW_COMPONENT_NAME) {
           return (
             <ProjectStoreContext.Provider value={projectStore}>
               <LogViewPanel />
             </ProjectStoreContext.Provider>
           );
         }
-        if (component === 'key-configurator' || name === 'Key Configurator') {
+        if (component === KEY_CONFIGURATOR_COMPONENT_NAME) {
           return (
             <GraphDesignerStoreContext.Provider value={tabStore}>
               <KeyConfiguratorPanel />
             </GraphDesignerStoreContext.Provider>
           );
         }
-        if (
-          component === 'validation-results' ||
-          name === 'Validation Results'
-        ) {
+        if (component === VALIDATION_RESULTS_COMPONENT_NAME) {
           return (
             <GraphDesignerStoreContext.Provider value={tabStore}>
               <ValidationResultPanel />

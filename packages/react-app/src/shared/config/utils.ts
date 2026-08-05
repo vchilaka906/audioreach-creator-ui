@@ -17,6 +17,11 @@ export type JSONDataMap = {
 };
 
 export const GRAPH_DESIGNER_COMPONENT_NAME = 'usecase';
+export const MODULE_LIST_COMPONENT_NAME = 'module-list';
+export const LOG_VIEW_COMPONENT_NAME = 'log-view';
+export const SUBGRAPH_LIST_COMPONENT_NAME = 'subgraph-list';
+export const KEY_CONFIGURATOR_COMPONENT_NAME = 'key-configurator';
+export const VALIDATION_RESULTS_COMPONENT_NAME = 'validation-results';
 export const MAIN_TAB_TITLE = 'Graph Designer';
 /**
  * Constant representing an invalid/undefined project ID
@@ -50,7 +55,7 @@ export const graphDesignerLayout = {
 export function GetFlexLayoutConfig(): IJsonModel {
   // Tab nodes
   const moduleListTab: IJsonTabNode = {
-    component: 'module-list',
+    component: MODULE_LIST_COMPONENT_NAME,
     enableClose: false,
     id: 'module-list-panel',
     name: 'Module List',
@@ -65,7 +70,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
   };
 
   const logViewTab: IJsonTabNode = {
-    component: 'log-view',
+    component: LOG_VIEW_COMPONENT_NAME,
     enableClose: false,
     id: 'log-view-panel',
     name: 'Log View',
@@ -73,7 +78,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
   };
 
   const subgraphListTab: IJsonTabNode = {
-    component: 'subgraph-list',
+    component: SUBGRAPH_LIST_COMPONENT_NAME,
     enableClose: false,
     id: 'subgraph-list-panel',
     name: 'Subgraph List',
@@ -81,7 +86,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
   };
 
   const keyConfiguratorTab: IJsonTabNode = {
-    component: 'key-configurator',
+    component: KEY_CONFIGURATOR_COMPONENT_NAME,
     enableClose: false,
     id: 'key-configurator-panel',
     name: 'Key Configurator',
@@ -89,7 +94,7 @@ export function GetFlexLayoutConfig(): IJsonModel {
   };
 
   const validationResultTab: IJsonTabNode = {
-    component: 'validation-results',
+    component: VALIDATION_RESULTS_COMPONENT_NAME,
     enableClose: false,
     id: 'validation-results-panel',
     name: 'Validation Results',
