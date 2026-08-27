@@ -233,3 +233,68 @@ export function buildLevelViewFromGraphData(
     subsystems,
   };
 }
+
+/**
+ * Builds a canvas view scoped to one subsystem's own modules, links, and direct child subsystems.
+ * Returns null if the subsystem is not found in the current graph data.
+ */
+export function buildSubsystemLevelViewFromGraphData(
+  data: UsecaseGraphData,
+  subsystemId: string,
+  levelId: string,
+): LevelView | null {
+  const subsystem = data.subsystems[subsystemId];
+  if (!subsystem) {
+    return null;
+  }
+
+  const ownedSubgraphIds = new Set(subsystem.subgraphs);
+
+  const moduleInstances: UsecaseGraphData['moduleInstances'] = {};
+  for (const [id, m] of Object.entries(data.moduleInstances)) {
+    if (ownedSubgraphIds.has(m.subgraphId)) {
+      moduleInstances[id] = m;
+    }
+  }
+  const includedModuleIds = new Set(Object.keys(moduleInstances));
+
+  const connections = data.connections.filter(
+    (c) =>
+      includedModuleIds.has(c.fromModuleId) &&
+      includedModuleIds.has(c.toModuleId),
+  );
+
+  const subgraphs: UsecaseGraphData['subgraphs'] = {};
+  for (const [id, sg] of Object.entries(data.subgraphs)) {
+    if (ownedSubgraphIds.has(id)) {
+      subgraphs[id] = sg;
+    }
+  }
+
+  const containers: UsecaseGraphData['containers'] = {};
+  for (const [id, c] of Object.entries(data.containers)) {
+    if (ownedSubgraphIds.has(c.subgraphId)) {
+      containers[id] = c;
+    }
+  }
+
+  const childSubsystemIds = new Set(subsystem.childSubsystemIds);
+  const subsystems: UsecaseGraphData['subsystems'] = {};
+  for (const [id, ss] of Object.entries(data.subsystems)) {
+    if (childSubsystemIds.has(id)) {
+      subsystems[id] = ss;
+    }
+  }
+
+  return buildLevelViewFromGraphData(
+    {
+      connections,
+      containers,
+      moduleInstances,
+      selectedUsecases: data.selectedUsecases,
+      subgraphs,
+      subsystems,
+    },
+    levelId,
+  );
+}

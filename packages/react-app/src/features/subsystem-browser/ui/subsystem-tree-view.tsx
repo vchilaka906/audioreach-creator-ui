@@ -17,7 +17,7 @@ import SubsystemTreeNode from './subsystem-tree-node';
 
 interface SubsystemTreeViewProps {
   data: SubsystemBrowserTreeNode[];
-  onClick: (id: number) => void;
+  onClick: (systemId: string) => void;
 }
 
 // collect all ids in the tree (depth-first)

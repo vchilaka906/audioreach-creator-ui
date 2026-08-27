@@ -12,7 +12,7 @@ import {ConvertStringToNumber} from '~shared/utils/converter-utils';
 
 interface SubsystemTreeNodeProps {
   isExpanded: (id: number) => boolean;
-  onClick: (id: number) => void;
+  onClick: (systemId: string) => void;
   rootNode?: boolean;
   searchTerm: string;
   toggleNode: (id: number) => void;
@@ -94,7 +94,7 @@ const SubsystemTreeNode: FC<SubsystemTreeNodeProps> = ({
 
           <span
             aria-label={`Navigate to ${treeNode.name}`}
-            onClick={() => onClick(treeNode.id)}
+            onClick={() => onClick(treeNode.systemId)}
             role="button"
             style={{fontWeight: 'bold'}}
             title={`ID: ${treeNode.id}`}

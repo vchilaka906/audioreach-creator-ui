@@ -33,6 +33,10 @@ export interface NodeFocusRequest {
 }
 
 export interface VisualizerSlice {
+  /** Subsystem id whose scoped contents the canvas should show.
+   *  null means show the normal full usecase view. */
+  activeSubsystemId: string | null;
+  clearActiveSubsystem: () => void;
   clearLevelView: () => void;
   clearNodeFocusRequest: (requestId: number) => void;
   clearSearchHighlight: () => void;
@@ -48,6 +52,7 @@ export interface VisualizerSlice {
   selectedEdges: SelectedEdgeRef[];
   selectedNodes: SelectedNodeRef[];
   setEffectiveLevelView: (lv: LevelView) => void;
+  setActiveSubsystemId: (subsystemId: string) => void;
   setGraphView: (graphView: GraphView | null) => void;
   setLevelView: (lv: LevelView) => void;
   setSearchHighlight: (
@@ -79,6 +84,13 @@ export function createVisualizerSlice<S extends VisualizerSlice>(
   set: StoreApi<S>['setState'],
 ): VisualizerSlice {
   return {
+    activeSubsystemId: null,
+
+    clearActiveSubsystem: () => {
+      logger.debug('visualizerSlice: clearActiveSubsystem');
+      set({activeSubsystemId: null} as Partial<S>);
+    },
+
     clearLevelView: () => {
       logger.debug('visualizerSlice: clearLevelView');
       set({effectiveLevelView: null, levelView: null} as Partial<S>);
@@ -146,6 +158,14 @@ export function createVisualizerSlice<S extends VisualizerSlice>(
         component: 'visualizerSlice',
       });
       set({effectiveLevelView: lv} as Partial<S>);
+    },
+
+    setActiveSubsystemId: (subsystemId: string) => {
+      logger.debug('visualizerSlice: setActiveSubsystemId', {
+        action: 'setActiveSubsystemId',
+        component: 'visualizerSlice',
+      });
+      set({activeSubsystemId: subsystemId} as Partial<S>);
     },
 
     setGraphView: (graphView: GraphView | null) => {
