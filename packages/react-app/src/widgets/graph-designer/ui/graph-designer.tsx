@@ -216,6 +216,9 @@ const GraphDesigner: React.FC<GraphDesignerProps> = ({
   const clearNodeFocusRequest = useGraphDesignerStoreShallow(
     (s) => s.clearNodeFocusRequest,
   );
+  const clearActiveSubsystem = useGraphDesignerStoreShallow(
+    (s) => s.clearActiveSubsystem,
+  );
   const moduleListStatus = useGraphDesignerStoreShallow(
     (s) => s.moduleListStatus,
   );
@@ -547,6 +550,7 @@ const GraphDesigner: React.FC<GraphDesignerProps> = ({
   // Effect A — trigger load when selection changes
   useEffect(() => {
     resetSearch();
+    clearActiveSubsystem();
     clearLevelView();
     setCollapseByLevel({});
     setPositionOverrides({});
@@ -568,6 +572,7 @@ const GraphDesigner: React.FC<GraphDesignerProps> = ({
   }, [
     selectedUsecases,
     resolvedData,
+    clearActiveSubsystem,
     clearLevelView,
     initializeEmptyGraphData,
     loadGraphData,

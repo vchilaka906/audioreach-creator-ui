@@ -51,8 +51,8 @@ export interface VisualizerSlice {
   searchHighlight: SearchHighlight | null;
   selectedEdges: SelectedEdgeRef[];
   selectedNodes: SelectedNodeRef[];
-  setEffectiveLevelView: (lv: LevelView) => void;
   setActiveSubsystemId: (subsystemId: string) => void;
+  setEffectiveLevelView: (lv: LevelView) => void;
   setGraphView: (graphView: GraphView | null) => void;
   setLevelView: (lv: LevelView) => void;
   setSearchHighlight: (
@@ -152,20 +152,20 @@ export function createVisualizerSlice<S extends VisualizerSlice>(
 
     selectedNodes: [],
 
-    setEffectiveLevelView: (lv: LevelView) => {
-      logger.debug('visualizerSlice: setEffectiveLevelView', {
-        action: 'setEffectiveLevelView',
-        component: 'visualizerSlice',
-      });
-      set({effectiveLevelView: lv} as Partial<S>);
-    },
-
     setActiveSubsystemId: (subsystemId: string) => {
       logger.debug('visualizerSlice: setActiveSubsystemId', {
         action: 'setActiveSubsystemId',
         component: 'visualizerSlice',
       });
       set({activeSubsystemId: subsystemId} as Partial<S>);
+    },
+
+    setEffectiveLevelView: (lv: LevelView) => {
+      logger.debug('visualizerSlice: setEffectiveLevelView', {
+        action: 'setEffectiveLevelView',
+        component: 'visualizerSlice',
+      });
+      set({effectiveLevelView: lv} as Partial<S>);
     },
 
     setGraphView: (graphView: GraphView | null) => {

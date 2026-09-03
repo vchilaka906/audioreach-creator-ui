@@ -258,9 +258,111 @@ describe('buildSubsystemLevelViewFromGraphData', () => {
     expect(lv!.dataLinks![0].id).toBe('inner-link');
   });
 
-  it('includes immediate child subsystems as markers but not grandchildren', () => {
+  it('includes descendant subsystems, modules, and internal links', () => {
     const data: UsecaseGraphData = {
       ...baseData,
+      connections: [
+        {
+          connectionId: 'module-to-child',
+          connectionType: 'data',
+          fromModuleId: 'sys-mod-1',
+          fromPortId: 'p-out',
+          isDangling: false,
+          toModuleId: 'sys-ss-21',
+          toPortId: 'p-in',
+        },
+        {
+          connectionId: 'child-to-module',
+          connectionType: 'data',
+          fromModuleId: 'sys-ss-21',
+          fromPortId: 'p-out',
+          isDangling: false,
+          toModuleId: 'sys-mod-2',
+          toPortId: 'p-in',
+        },
+        {
+          connectionId: 'child-to-grandchild',
+          connectionType: 'data',
+          fromModuleId: 'sys-ss-21',
+          fromPortId: 'p-out',
+          isDangling: false,
+          toModuleId: 'sys-ss-22',
+          toPortId: 'p-in',
+        },
+        {
+          connectionId: 'outside-link',
+          connectionType: 'data',
+          fromModuleId: 'sys-mod-1',
+          fromPortId: 'p-out',
+          isDangling: false,
+          toModuleId: 'outside-module',
+          toPortId: 'p-in',
+        },
+        {
+          connectionId: 'parent-boundary-link',
+          connectionType: 'data',
+          fromModuleId: 'sys-ss-20',
+          fromPortId: 'p-out',
+          isDangling: false,
+          toModuleId: 'sys-mod-1',
+          toPortId: 'p-in',
+        },
+      ],
+      containers: {
+        ...baseData.containers,
+        '11': {
+          containerId: '11',
+          moduleInstances: ['sys-mod-2'],
+          subgraphId: '6',
+        },
+        '12': {
+          containerId: '12',
+          moduleInstances: ['sys-mod-3'],
+          subgraphId: '7',
+        },
+      },
+      moduleInstances: {
+        ...baseData.moduleInstances,
+        'sys-mod-2': {
+          containerId: '11',
+          displayName: 'ChildModule',
+          inputPorts: [],
+          moduleId: '201',
+          moduleInstanceId: 'sys-mod-2',
+          moduleName: 'ChildModule',
+          moduleType: '',
+          outputPorts: [],
+          position: {x: 0, y: 0},
+          subgraphId: '6',
+        },
+        'sys-mod-3': {
+          containerId: '12',
+          displayName: 'GrandchildModule',
+          inputPorts: [],
+          moduleId: '202',
+          moduleInstanceId: 'sys-mod-3',
+          moduleName: 'GrandchildModule',
+          moduleType: '',
+          outputPorts: [],
+          position: {x: 0, y: 0},
+          subgraphId: '7',
+        },
+      },
+      subgraphs: {
+        ...baseData.subgraphs,
+        '6': {
+          containers: ['11'],
+          subgraphId: '6',
+          subgraphName: 'SG6',
+          subgraphType: '',
+        },
+        '7': {
+          containers: ['12'],
+          subgraphId: '7',
+          subgraphName: 'SG7',
+          subgraphType: '',
+        },
+      },
       subsystems: {
         'sys-ss-20': {
           ...baseData.subsystems['sys-ss-20'],
@@ -270,7 +372,7 @@ describe('buildSubsystemLevelViewFromGraphData', () => {
           childSubsystemIds: ['sys-ss-22'],
           controlPorts: [],
           dataPorts: [],
-          subgraphs: [],
+          subgraphs: ['6'],
           subsystemId: 'sys-ss-21',
           subsystemName: 'ChildSubsystem',
         },
@@ -278,7 +380,7 @@ describe('buildSubsystemLevelViewFromGraphData', () => {
           childSubsystemIds: [],
           controlPorts: [],
           dataPorts: [],
-          subgraphs: [],
+          subgraphs: ['7'],
           subsystemId: 'sys-ss-22',
           subsystemName: 'GrandchildSubsystem',
         },
@@ -287,9 +389,19 @@ describe('buildSubsystemLevelViewFromGraphData', () => {
 
     const lv = buildSubsystemLevelViewFromGraphData(data, 'sys-ss-20', 'level-1');
 
+    expect(lv!.modules?.map((m) => m.id)).toEqual([
+      'sys-mod-1',
+      'sys-mod-2',
+      'sys-mod-3',
+    ]);
     const subsystemIds = lv!.subsystems?.map((ss) => ss.subsystemId) ?? [];
     expect(subsystemIds).toContain('sys-ss-21');
-    expect(subsystemIds).not.toContain('sys-ss-22');
+    expect(subsystemIds).toContain('sys-ss-22');
+    expect(lv!.dataLinks?.map((link) => link.id)).toEqual([
+      'module-to-child',
+      'child-to-module',
+      'child-to-grandchild',
+    ]);
   });
 
   it('passes the given levelId through to the result', () => {
